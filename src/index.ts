@@ -16,7 +16,7 @@ import page500 from "./pages/500/index.html"
 import path from "node:path"
 import "./env"
 
-export const rootPath = process.env.DEV ? import.meta.dir : path.dirname(process.execPath)
+export const rootPath = import.meta.dir
 export const schedulePath = path.join(rootPath, "schedule.json")
 export const timeTablePath = path.join(rootPath, "timetabled.json")
 
