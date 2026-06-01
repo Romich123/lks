@@ -1,0 +1,151 @@
+@import url("./reset.css");
+
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    color-scheme: dark;
+    background-color: #111;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+
+    --background-0: #111;
+    --background-1: #222;
+    --background-2: #333;
+
+    --border-0: #444444;
+    --border-1: #555;
+    --border-2: #666;
+
+    --text: white;
+    --text-silent: #ffffffcc;
+
+    --header-height: 40px;
+}
+
+body, html, #root {
+    height: 100%;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+button {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font: inherit;
+}
+
+input[type="submit"] {
+    font: inherit;
+    color: inherit
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+}
+
+#page-header {
+    padding: 0.7em 1.6em;
+
+    font-weight: bold;
+
+    background-color: var(--background-2);
+    border-bottom: 1px solid var(--border-0);
+
+    display: flex;
+    justify-content: space-between;
+
+    height: var(--header-height);
+}
+
+#page-content {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+
+    height: 100%;
+}
+
+#page-side-menu {
+    height: 100%;
+
+    background-color: var(--background-1);
+    border-right: 1px solid var(--border-0);
+
+    padding-top: 1em;
+}
+
+#page-side-menu > nav > ul {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.side-menu-item {
+    padding: 0 1em;
+}
+
+.page-menu {
+    padding: 2em;
+
+    gap: 1em;
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
+}
+
+.page-menu-category {
+    padding: 0.4em;
+    margin-bottom: 2em;
+}
+
+.page-menu-category > header {
+    margin-bottom: 1em;
+    font-weight: bold;
+}
+
+.page-menu-category > ul {
+    display: flex;
+    flex-direction: column;
+
+    gap: 0.8em;
+
+    padding-left: 0.8em;
+}
+
+.page-menu-category :is(button, a) {
+    transition: 200ms;
+
+    cursor: pointer;
+    position: relative;
+    left: 0;
+}
+
+.page-menu-category :is(button, a):hover {
+    left: 0.5em;
+}
+
+#page-actual-content-wrapper {
+    flex: 1;
+
+    overflow-y: auto;
+    min-height: 0;
+
+    height: 100%;
+    max-height: 100%;
+}
+
+#page-actual-content {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2em;
+}

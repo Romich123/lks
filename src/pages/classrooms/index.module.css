@@ -1,0 +1,26 @@
+.classroomTableWrapper {
+    width: 100%;
+
+    padding: 2em 2em;
+}
+
+.addEquipmentButton {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border-1);
+    background: var(--background-0);
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.addEquipmentButton:hover {
+    background: var(--background-hover);
+}
+
+.equipmentAttachSection {
+    margin-top: 1.5rem;
+}
+
+.equipmentAttachHeader {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}

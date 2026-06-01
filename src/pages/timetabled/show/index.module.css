@@ -1,0 +1,82 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--header-height));
+    background: var(--background-0);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-0);
+    background: var(--background-1);
+    color: var(--text-silent);
+    font-size: 18px;
+}
+
+.panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 44px;
+    padding: 32px;
+    text-align: center;
+}
+
+.workerBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 900px;
+}
+
+.caption {
+    color: var(--text-silent);
+    font-size: 32px;
+}
+
+.workerName {
+    font-size: clamp(42px, 7vw, 86px);
+    line-height: 1.05;
+    font-weight: 700;
+}
+
+.contact {
+    color: var(--text-silent);
+    font-size: clamp(30px, 5vw, 58px);
+}
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    color: var(--text-silent);
+    font-size: clamp(24px, 4vw, 44px);
+}
+
+.meta time {
+    color: var(--text);
+    font-size: clamp(42px, 7vw, 78px);
+    font-weight: 700;
+}
+
+.error {
+    color: #ffb6b6;
+    font-size: 16px;
+}
+
+@media (max-width: 720px) {
+    .header {
+        flex-direction: column;
+        font-size: 16px;
+    }
+
+    .panel {
+        gap: 32px;
+        padding: 24px 16px;
+    }
+}

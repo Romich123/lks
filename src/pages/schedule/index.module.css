@@ -1,0 +1,296 @@
+@media print {
+    .header {
+        display: none !important;
+    }
+
+    .main {
+        margin-top: 0 !important;
+    }
+
+    :root,
+    body,
+    .main {
+        background-color: white !important;
+    }
+}
+
+:root {
+    --background-0: #111;
+    --background-1: #222;
+    --background-2: #333;
+
+    --border-0: #444444;
+    --border-1: #555;
+    --border-2: #666;
+
+    --text: white;
+    --text-silent: #ffffffcc;
+
+    color: white;
+    color-scheme: light;
+    background-color: #111;
+    font-family: 'Times New Roman', Times, serif;
+    line-height: 1;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+.header {
+    color-scheme: dark;
+
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    height: 40px;
+
+    background-color: var(--background-1);
+    border-bottom: 1px solid var(--border-0);
+
+    z-index: 10;
+}
+
+.main {
+    margin-top: 40px;
+    background-color: var(--background-1);
+
+    isolation: isolate;
+}
+
+.input {
+    border-radius: 200px;
+    padding: 0.1em 0.8em;
+    border: 1px solid var(--border-1);
+    min-width: 0;
+    flex: 1;
+}
+
+.loadButton {
+    border: 1px solid var(--border-1);
+    background-color: var(--background-0);
+    color: var(--text);
+
+    padding: 0.4em 0.6em;
+    border-radius: 1em;
+    cursor: pointer;
+}
+
+.loadButton:hover {
+    background-color: var(--background-1);
+}
+
+.dateChoosing {
+    display: flex;
+    gap: 10px;
+    min-width: 0;
+}
+
+.daySelection {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    list-style: none;
+}
+
+.daySelection button {
+    border: 1px solid var(--border-1);
+    background-color: var(--background-2);
+
+    padding: 0.4em 0.6em;
+    border-radius: 1em;
+    cursor: pointer;
+}
+
+.daySelection button:hover {
+    background-color: var(--background-1);
+}
+
+.daySelection button.selected {
+    background-color: var(--background-0);
+    border: 1px solid var(--border-2);
+}
+
+.faulty {
+    border-color: red;
+    outline-color: red;
+}
+
+.faulty:focus-visible {
+    outline: 1px solid red;
+}
+
+.table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    color: black;
+    background-color: white;
+
+    line-height: 1;
+}
+
+.table th,
+.table td {
+    border: 1px solid black;
+    text-align: center;
+}
+
+.table th {
+    font-weight: bold;
+}
+
+.table td {
+    text-align: center;
+}
+
+.signatureCell {
+    color: #999;
+}
+
+.spaceCell {
+    position: relative;
+}
+
+.spaceCell::before,
+.spaceCell::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.spaceCell::before {
+    background: linear-gradient(to bottom right, transparent 49%, black 50%, transparent 51%);
+}
+
+.spaceCell::after {
+    background: linear-gradient(to top right, transparent 49%, black 50%, transparent 51%);
+}
+
+.empty {
+    color: #999;
+    background-color: #CCC;
+}
+
+.teacherName {
+    height: 2em;
+    font-weight: bold;
+
+    position: relative;
+}
+
+.consult {
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0.2em;
+}
+
+.rowRoomName {
+    font-size: 30px;
+    font-weight: bold;
+    background-color: #CCC;
+    vertical-align: middle;
+}
+
+.breakAfter {
+    page-break-after: always;
+}
+
+.lessonFlag {
+    position: absolute;
+    bottom: 0px;
+    right: 5px;
+}
+
+.loadingIndicator {
+    position: fixed;
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+    right: 10px;
+    bottom: 10px;
+
+    background-color: white;
+    color: black;
+    font-weight: bold;
+    padding: 20px;
+    border-radius: 20px;
+}
+
+.loadingIndicator > svg {
+    transform-origin: center;
+    animation: spinner .75s infinite linear
+}
+
+.editableCell {
+    cursor: pointer;
+}
+
+.editableCell:hover {
+    background-color: #eef5ff;
+}
+
+.editOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: grid;
+    place-items: center;
+    z-index: 100;
+}
+
+.editMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 320px;
+    background: #fff;
+    color: #000;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #999;
+}
+
+.editMenu h3 {
+    margin: 0;
+}
+
+.editMenu label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.editActions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.saveState {
+    max-width: 280px;
+    color: var(--text-silent);
+    font-size: 13px;
+}
+
+@keyframes spinner {
+    100% {
+        transform: rotate(360deg)
+    }
+}

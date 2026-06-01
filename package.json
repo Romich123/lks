@@ -1,0 +1,28 @@
+{
+    "name": "bun-react-template",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "bun --hot src/index.ts",
+        "build:pages": "bun build ./src/pages/index/index.html ./src/pages/classrooms/index.html ./src/pages/equipment/index.html ./src/pages/schedule/index.html ./src/pages/timetabled/edit/index.html ./src/pages/timetabled/show/index.html ./src/pages/404/index.html ./src/pages/500/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
+        "build": "bun run build:pages",
+        "start": "NODE_ENV=production bun src/index.ts"
+    },
+    "dependencies": {
+        "@tanstack/react-query": "^5.90.21",
+        "@tanstack/react-query-devtools": "^5.91.3",
+        "@types/jsdom": "^28.0.1",
+        "@types/jsonwebtoken": "^9.0.10",
+        "bun-lightningcss": "^0.2.0",
+        "jsdom": "^29.0.1",
+        "jsonwebtoken": "^9.0.3",
+        "react": "^19",
+        "react-dom": "^19"
+    },
+    "devDependencies": {
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/bun": "latest"
+    }
+}

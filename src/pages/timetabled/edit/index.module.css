@@ -1,0 +1,220 @@
+.page {
+    min-height: 100%;
+    background: var(--background-0);
+}
+
+.toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--background-1);
+    border-bottom: 1px solid var(--border-0);
+}
+
+.button {
+    border: 1px solid var(--border-1);
+    background: var(--background-0);
+    color: var(--text);
+    padding: 0.45em 0.75em;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background: var(--background-2);
+}
+
+.button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.weekInput {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-silent);
+}
+
+.weekInput input {
+    width: 80px;
+    border: 1px solid var(--border-1);
+    border-radius: 8px;
+    padding: 0.4em 0.6em;
+    color: var(--text);
+    background: var(--background-0);
+}
+
+.state {
+    margin-left: auto;
+    color: var(--text-silent);
+    font-size: 14px;
+}
+
+.tableWrap {
+    overflow: auto;
+    padding: 16px;
+}
+
+.grid {
+    min-width: 1060px;
+    border: 1px solid var(--border-0);
+    background: var(--background-1);
+}
+
+.cornerCell,
+.hourCell,
+.dayLabel {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 10px;
+    border-right: 1px solid var(--border-0);
+    border-bottom: 1px solid var(--border-0);
+    background: var(--background-2);
+    font-weight: 600;
+}
+
+.cornerCell {
+    width: 160px;
+    float: left;
+}
+
+.hourCell {
+    display: inline-flex;
+    justify-content: center;
+    width: calc((100% - 160px) / 12);
+}
+
+.dayRow {
+    clear: both;
+    display: grid;
+    grid-template-columns: 160px minmax(900px, 1fr);
+    min-height: 64px;
+}
+
+.dayLabel {
+    border-bottom: 1px solid var(--border-0);
+}
+
+.slots {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(48, minmax(0, 1fr));
+    min-height: 64px;
+    border-bottom: 1px solid var(--border-0);
+}
+
+.slot {
+    min-width: 0;
+    border-right: 1px solid #ffffff12;
+    cursor: pointer;
+}
+
+.slot:nth-child(4n) {
+    border-right-color: var(--border-0);
+}
+
+.slot:hover,
+.highlighted {
+    background: #ffffff1f;
+}
+
+.highlighted {
+    background: #2774c733;
+}
+
+.assignment {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    min-width: 34px;
+    padding: 6px 8px;
+    border-left: 3px solid #fff;
+    border-right: 1px solid #ffffff80;
+    background: #3e4a52;
+    overflow: hidden;
+}
+
+.assignmentText {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.assignmentText strong,
+.assignmentText span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assignmentText span {
+    color: var(--text-silent);
+    font-size: 13px;
+}
+
+.removeButton {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: 2px 5px;
+    color: var(--text-silent);
+    cursor: pointer;
+}
+
+.removeButton:hover {
+    color: var(--text);
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(420px, calc(100vw - 32px));
+    padding: 16px;
+    border: 1px solid var(--border-1);
+    border-radius: 8px;
+    background: var(--background-1);
+}
+
+.dialog h2 {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.dialog label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-silent);
+}
+
+.dialog input {
+    border: 1px solid var(--border-1);
+    border-radius: 8px;
+    padding: 0.55em 0.7em;
+    color: var(--text);
+    background: var(--background-0);
+}
+
+.dialogActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

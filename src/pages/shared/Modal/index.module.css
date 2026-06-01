@@ -1,0 +1,17 @@
+.outer {
+    position: fixed;
+    inset: 0;
+
+    background-color: #000000c3;
+
+    align-items: center;
+    justify-content: center;
+
+    display: none;
+
+    z-index: 100;
+}
+
+.open {
+    display: flex;
+}

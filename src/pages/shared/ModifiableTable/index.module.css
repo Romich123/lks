@@ -1,0 +1,462 @@
+.table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+    isolation: isolate;
+    position: relative;
+    table-layout: fixed;
+}
+
+.tableControls {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 0;
+}
+
+.columnManagerButton {
+    border: 1px solid var(--border-1);
+    background: var(--background-0);
+    color: inherit;
+    border-radius: 0.8rem 0.8rem 0 0;
+    padding: 0.55rem 0.95rem 0.5rem;
+    margin-bottom: -1px;
+    cursor: pointer;
+    font: inherit;
+    position: relative;
+    z-index: 1;
+}
+
+.columnManagerButton:hover {
+    background: var(--background-1, #fff);
+}
+
+.columnManagerButton[data-open="true"] {
+    background: var(--background-1, #fff);
+}
+
+.table :is(td, th) {
+    border: 1px solid var(--border-1, #ccc);
+    padding: 0.4em 0.8em;
+    text-align: left;
+}
+
+.table th {
+    background-color: var(--background-2);
+    font-weight: bold;
+    position: relative;
+    cursor: pointer;
+}
+
+.filteredHeader {
+    background: color-mix(in srgb, var(--background-2) 78%, #d7ecd0 22%);
+}
+
+.tableColumnHead {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.tableColumnHeadText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.filterIndicator {
+    min-width: 1.35rem;
+    height: 1.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    background: var(--background-0);
+}
+
+.filterIndicator {
+    color: #3f6f2a;
+}
+
+.sortButton {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 0.45rem;
+    padding: 0.18rem 0.4rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    min-width: 2rem;
+    justify-content: center;
+}
+
+.sortButton:hover,
+.sortButtonActive {
+    background: var(--background-0);
+    border-color: var(--border-1, #ccc);
+}
+
+.sortDirection {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: inherit;
+    font-size: 0;
+    line-height: 0;
+    overflow: hidden;
+    text-indent: -9999px;
+    white-space: nowrap;
+}
+
+.sortDirection::before,
+.sortDirection::after {
+    content: "";
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 0.28rem solid transparent;
+    border-right: 0.28rem solid transparent;
+    opacity: 0.28;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.sortDirection::before {
+    border-bottom: 0.38rem solid currentColor;
+    margin-bottom: 0.08rem;
+}
+
+.sortDirection::after {
+    border-top: 0.38rem solid currentColor;
+}
+
+.sortButton[data-sort-state="none"] .sortDirection::before,
+.sortButton[data-sort-state="none"] .sortDirection::after {
+    opacity: 0.75;
+}
+
+.sortButton[data-sort-state="asc"] .sortDirection::before {
+    opacity: 1;
+    transform: translateY(-0.02rem);
+}
+
+.sortButton[data-sort-state="asc"] .sortDirection::after {
+    opacity: 0.2;
+}
+
+.sortButton[data-sort-state="desc"] .sortDirection::before {
+    opacity: 0.2;
+}
+
+.sortButton[data-sort-state="desc"] .sortDirection::after {
+    opacity: 1;
+    transform: translateY(0.02rem);
+}
+
+.headerMenu {
+    z-index: 300;
+    width: min(24rem, calc(100vw - 1rem));
+    max-height: min(80vh, 44rem);
+    overflow: auto;
+    padding: 0.85rem;
+    border: 1px solid var(--border-1, #ccc);
+    border-radius: 0.8rem;
+    background: var(--background-0, #fff);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.18);
+}
+
+.menuSection {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.menuSection + .menuSection {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-1, #ccc);
+}
+
+.menuTitleRow,
+.menuStatusRow,
+.menuActionsRow,
+.menuRangeFields {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.menuTitleRow {
+    justify-content: space-between;
+}
+
+.menuStatusRow {
+    justify-content: space-between;
+    color: var(--text-secondary, inherit);
+    font-size: 0.85rem;
+}
+
+.menuSectionTitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.menuField {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    flex: 1;
+}
+
+.menuField input,
+.headerMenu select {
+    width: 100%;
+    border: 1px solid var(--border-1, #ccc);
+    border-radius: 0.45rem;
+    padding: 0.45rem 0.55rem;
+    background: var(--background-1, #fff);
+    color: inherit;
+    font: inherit;
+}
+
+.menuCheckbox {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.9rem;
+}
+
+.menuCheckbox input {
+    margin: 0;
+}
+
+.columnToggleList {
+    display: grid;
+    gap: 0.45rem;
+    max-height: 12rem;
+    overflow: auto;
+}
+
+.columnManagerList {
+    display: grid;
+    gap: 0.6rem;
+    max-height: 16rem;
+    overflow: auto;
+}
+
+.columnManagerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.columnManagerActions {
+    display: flex;
+    gap: 0.45rem;
+}
+
+.menuActionsWrap {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.secondaryButton,
+.menuCloseButton {
+    border: 1px solid var(--border-1, #ccc);
+    background: var(--background-1, #fff);
+    color: inherit;
+    border-radius: 0.45rem;
+    padding: 0.42rem 0.65rem;
+    cursor: pointer;
+    font: inherit;
+}
+
+.secondaryButton:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.menuCloseButton {
+    padding: 0.28rem;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menuCloseButton svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.table tr {
+    position: relative;
+}
+
+.hiddenMenuCell {
+    position: absolute;
+    left: 0.3em;
+    top: 100%;
+    background-color: var(--background-0);
+    padding: 0.2em 0.5em 0.3em 0.5em !important;
+    border-radius: 0 0 0.5em 0.5em;
+    border-top: none !important;
+    display: none;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hiddenMenuCell svg {
+    height: 1.4em;
+    width: 1.2em;
+}
+
+.hiddenMenuRow:hover .hiddenMenuCell {
+    display: flex;
+    gap: 0.4em;
+    height: 2em;
+    align-items: center;
+}
+
+.hiddenMenuCell > button {
+    width: 1.5em;
+    padding: 0 0.2em;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.2em;
+    transition: background-color 0.2s;
+}
+
+.hiddenMenuCell > button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.hiddenMenuCell > button > svg {
+    width: 100%;
+    height: 1.4em;
+}
+
+.creationActionsCell {
+    position: absolute;
+    left: 0.3em;
+    top: 100%;
+    background-color: var(--background-0);
+    padding: 0.2em 0.5em 0.3em 0.5em !important;
+    border-radius: 0 0 0.5em 0.5em;
+    border: 1px solid var(--border-1);
+    border-top: none !important;
+    display: flex;
+    gap: 0.4em;
+    height: 2em;
+    align-items: center;
+    z-index: 101;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.creationActionsCell > button {
+    padding: 0.2em 0.8em;
+    background: var(--background-0);
+    border: 1px solid var(--border-1);
+    cursor: pointer;
+    border-radius: 0.2em;
+    font: inherit;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.creationActionsCell > button:hover {
+    background: var(--background-hover);
+}
+
+.newRow > td {
+    padding: 0;
+    background-color: var(--background-1);
+}
+
+.newRowInput {
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0.4em 0.8em;
+    background-color: inherit;
+    font: inherit;
+}
+
+.newRowInput[type="checkbox"] {
+    width: auto;
+    margin: 0.4em 0.8em;
+    cursor: pointer;
+}
+
+.editRow > td {
+    padding: 0;
+    background-color: var(--background-1);
+}
+
+.editRowInput {
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0.4em 0.8em;
+    background-color: inherit;
+    font: inherit;
+}
+
+.editRowInput[type="checkbox"] {
+    width: auto;
+    margin: 0.4em 0.8em;
+    cursor: pointer;
+}
+
+.actionsHeader {
+    width: 0;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.bottomRow {
+    background-color: var(--background-2, #f5f5f5);
+}
+
+.bottomRowCell {
+    padding: 0.45rem 0.8rem;
+}
+
+.bottomRowContent {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+}
+
+.bottomRowButton {
+    background: var(--background-0);
+    padding: 0.4em;
+    border-radius: 0.5em;
+    width: 2.2em;
+    height: 2.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bottomRowIcon {
+    height: 70%;
+    width: 100%;
+}
