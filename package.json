@@ -7,7 +7,8 @@
         "dev": "tsx watch src/index.ts",
         "build:pages": "vite build",
         "build": "vite build",
-        "start": "cross-env NODE_ENV=production node --import tsx src/index.ts"
+        "start": "cross-env NODE_ENV=production node --import tsx src/index.ts",
+        "create-admin": "tsx scripts/create-admin.ts"
     },
     "dependencies": {
         "@tanstack/react-query": "^5.90.21",
