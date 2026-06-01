@@ -1,26 +1,25 @@
-import { serve } from "bun"
 import { apiRoutes } from "./api"
-import { getAdmin } from "./api/auth"
+import { AppRequest, CookieStore, RouteHandler, getAdmin } from "./api/auth"
 import { urls } from "./pages/urls"
-import { fetchNSTUSchedule, fetchNSTUFacultyGroups, Schedule, fetchNSTUExams } from "./lib/nstuParsing"
-
-import index from "./pages/index/index.html"
-import schedulePage from "./pages/schedule/index.html"
-import classroomsPage from "./pages/classrooms/index.html"
-import equipmentPage from "./pages/equipment/index.html"
-import timetableShowPage from "./pages/timetabled/show/index.html"
-import timetableEditPage from "./pages/timetabled/edit/index.html"
-import page404 from "./pages/404/index.html"
-import page500 from "./pages/500/index.html"
-
+import { fetchNSTUFacultyGroups, fetchNSTUSchedule, Schedule } from "./lib/nstuParsing"
+import express, { Request, Response as ExpressResponse } from "express"
+import { createServer } from "node:http"
+import { readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
+import { randomUUID } from "node:crypto"
+import { WebSocketServer, WebSocket } from "ws"
+import "dotenv/config"
 import "./env"
 
-export const rootPath = import.meta.dir
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const projectRoot = path.resolve(__dirname, "..")
+
+export const rootPath = __dirname
 export const schedulePath = path.join(rootPath, "schedule.json")
 export const timeTablePath = path.join(rootPath, "timetabled.json")
 
-console.log("Расписание хранится в ", schedulePath)
+console.log("Расписание хранится в: ", schedulePath)
 
 const neededRooms = [
     "6-210",
@@ -53,100 +52,236 @@ const neededRooms = [
     "6-912",
     "6-1001",
     "6-1007",
-    "5-КЗ",
+    "5-РљР—",
     "6-309",
 ]
 
+type QueuedCookie = {
+    name: string
+    value: string
+}
+
+function parseCookies(header: string | undefined): Map<string, string> {
+    const result = new Map<string, string>()
+    if (!header) return result
+
+    for (const item of header.split(";")) {
+        const [rawName, ...rawValue] = item.trim().split("=")
+        if (!rawName) continue
+
+        result.set(rawName, decodeURIComponent(rawValue.join("=")))
+    }
+
+    return result
+}
+
+function serializeCookie({ name, value }: QueuedCookie) {
+    return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax`
+}
+
+function createCookieStore(initial: Map<string, string>, queued: QueuedCookie[]): CookieStore {
+    return {
+        get(name) {
+            return initial.get(name)
+        },
+        set(name, value) {
+            initial.set(name, value)
+            queued.push({ name, value })
+        },
+    }
+}
+
+function createAppRequest(req: Request, queuedCookies: QueuedCookie[]): AppRequest {
+    const cookies = createCookieStore(parseCookies(req.headers.cookie), queuedCookies)
+
+    return {
+        url: `${req.protocol}://${req.get("host")}${req.originalUrl}`,
+        params: Object.fromEntries(Object.entries(req.params).map(([key, value]) => [key, Array.isArray(value) ? (value[0] ?? "") : value])),
+        cookies,
+        async json() {
+            return req.body
+        },
+    }
+}
+
+async function sendWebResponse(response: Response, queuedCookies: QueuedCookie[], res: ExpressResponse) {
+    res.status(response.status)
+    response.headers.forEach((value, key) => res.setHeader(key, value))
+
+    for (const cookie of queuedCookies) {
+        res.append("Set-Cookie", serializeCookie(cookie))
+    }
+
+    const body = Buffer.from(await response.arrayBuffer())
+    res.send(body)
+}
+
+function registerRoute(app: express.Express, route: string, method: string, handler: RouteHandler) {
+    const expressHandler = async (req: Request, res: ExpressResponse) => {
+        const queuedCookies: QueuedCookie[] = []
+
+        try {
+            const response = await handler(createAppRequest(req, queuedCookies))
+            await sendWebResponse(response, queuedCookies, res)
+        } catch (error) {
+            console.error("Error:", error)
+            res.redirect(`/server-error?text=${encodeURIComponent(error instanceof Error ? error.message : String(error))}`)
+        }
+    }
+
+    app[method.toLowerCase() as "get" | "post" | "put" | "delete" | "all"](route, expressHandler)
+}
+
+function registerApiRoutes(app: express.Express) {
+    for (const [route, handlerOrMethods] of Object.entries(apiRoutes)) {
+        if (typeof handlerOrMethods === "function") {
+            registerRoute(app, route, "all", handlerOrMethods)
+            continue
+        }
+
+        for (const [method, handler] of Object.entries(handlerOrMethods)) {
+            registerRoute(app, route, method, handler)
+        }
+    }
+}
+
+async function registerPageRoutes(app: express.Express) {
+    const isProduction = process.env.NODE_ENV === "production"
+    const pageMap = new Map([
+        [urls.index, "index/index.html"],
+        [urls.classrooms, "classrooms/index.html"],
+        [urls.equipment, "equipment/index.html"],
+        [urls.schedule, "schedule/index.html"],
+        [urls.timetableShow, "timetabled/show/index.html"],
+        [urls.timetableEdit, "timetabled/edit/index.html"],
+        ["/server-error", "500/index.html"],
+    ])
+
+    if (isProduction) {
+        const publicDir = path.join(projectRoot, "dist/public")
+        app.use(express.static(publicDir))
+
+        for (const [route, htmlPath] of pageMap) {
+            app.get(route, (_req, res) => res.sendFile(path.join(publicDir, htmlPath)))
+        }
+
+        app.use((_req, res) => res.status(404).sendFile(path.join(publicDir, "404/index.html")))
+        return
+    }
+
+    const { createServer: createViteServer } = await import("vite")
+    const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "custom",
+    })
+
+    app.use(vite.middlewares)
+
+    for (const [route, htmlPath] of pageMap) {
+        app.get(route, async (req, res, next) => {
+            try {
+                const sourcePath = path.join(projectRoot, "src/pages", htmlPath)
+                const html = await readFile(sourcePath, "utf8")
+                res.status(200)
+                    .set({ "Content-Type": "text/html" })
+                    .end(await vite.transformIndexHtml(req.originalUrl, html))
+            } catch (error) {
+                vite.ssrFixStacktrace(error as Error)
+                next(error)
+            }
+        })
+    }
+
+    app.use(async (req, res, next) => {
+        try {
+            const sourcePath = path.join(projectRoot, "src/pages/404/index.html")
+            const html = await readFile(sourcePath, "utf8")
+            res.status(404)
+                .set({ "Content-Type": "text/html" })
+                .end(await vite.transformIndexHtml(req.originalUrl, html))
+        } catch (error) {
+            next(error)
+        }
+    })
+}
+
+async function runScheduleParsing(ws: WebSocket, id: string, weeks: number[]) {
+    wsClientStopped.set(id, false)
+
+    const groups = await fetchNSTUFacultyGroups("2")
+    const dataStream = fetchNSTUSchedule(groups, neededRooms, weeks)
+
+    let data
+    while ((data = await dataStream.next()) && !data.done) {
+        if (wsClientStopped.get(id)) {
+            return
+        }
+
+        ws.send(JSON.stringify(data.value))
+    }
+
+    try {
+        const oldData = JSON.parse(await readFile(schedulePath, "utf8")) as Schedule
+
+        for (const week of weeks) {
+            oldData.lessons[week] = data.value.lessons[week]!
+            oldData.consults = data.value.consults
+        }
+
+        await writeFile(schedulePath, JSON.stringify(oldData))
+
+        ws.send(JSON.stringify({ type: "Ready", schedule: oldData }))
+        ws.close()
+    } catch {
+        ws.send(JSON.stringify({ type: "Ready", schedule: data.value }))
+        ws.close()
+    }
+}
+
 const wsClientStopped = new Map<string, boolean>()
 
-const server = serve({
-    port: process.env.PORT ? Number(process.env.PORT) : undefined,
-    routes: {
-        [urls.index]: index,
-        // [urls.classrooms]: classroomsPage,
-        // [urls.equipment]: equipmentPage,
-        [urls.schedule]: schedulePage,
-        [urls.timetableShow]: timetableShowPage,
-        [urls.timetableEdit]: timetableEditPage,
-        "/server-error": page500,
-        "/parse-schedule": async (req) => {
-            if (!getAdmin(req)) {
-                return Response.json({ success: false, requiresAuth: true, requiresAdmin: true }, { status: 401 })
-            }
+async function main() {
+    const app = express()
+    app.use(express.json({ limit: "10mb" }))
 
-            const { searchParams } = new URL(req.url)
+    registerApiRoutes(app)
+    await registerPageRoutes(app)
 
-            const weekParam = Number(searchParams.get("week"))
-            const defaultWeeks = Array.from({ length: 18 }, (_, i) => i + 1)
+    const server = createServer(app)
+    const wss = new WebSocketServer({ noServer: true })
 
-            const weeks = Number.isSafeInteger(weekParam) && weekParam > 0 ? [weekParam] : defaultWeeks
-            const data = server.upgrade(req, { data: { connectionReason: { type: "parsing", weeks: weeks }, id: Bun.randomUUIDv7() } })
+    server.on("upgrade", (req, socket, head) => {
+        const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`)
+        if (url.pathname !== "/parse-schedule") {
+            socket.destroy()
+            return
+        }
 
-            if (!data) {
-                return undefined
-            }
+        const queuedCookies: QueuedCookie[] = []
+        const cookies = createCookieStore(parseCookies(req.headers.cookie), queuedCookies)
+        if (!getAdmin({ cookies })) {
+            socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n")
+            socket.destroy()
+            return
+        }
 
-            return Response.json({ success: false })
-        },
-        // Serve 404 for all unmatched routes.
-        ...apiRoutes,
-    },
+        const weekParam = Number(url.searchParams.get("week"))
+        const weeks = Number.isSafeInteger(weekParam) && weekParam > 0 ? [weekParam] : Array.from({ length: 18 }, (_, i) => i + 1)
+        const id = randomUUID()
 
-    websocket: {
-        data: {} as { connectionReason?: { type: "parsing"; weeks: number[] }; id: string },
-        async open(ws) {
-            ws.binaryType = "uint8array"
-            wsClientStopped.set(ws.data.id, false)
-            if (ws.data.connectionReason?.type === "parsing") {
-                const groups = await fetchNSTUFacultyGroups("2")
-                const classrooms = neededRooms
+        wss.handleUpgrade(req, socket, head, (ws) => {
+            ws.on("close", () => wsClientStopped.set(id, true))
+            void runScheduleParsing(ws, id, weeks).catch((error) => {
+                console.error("WebSocket error:", error)
+                ws.close()
+            })
+        })
+    })
 
-                const dataStream = fetchNSTUSchedule(groups, classrooms, ws.data.connectionReason.weeks)
+    const port = process.env.PORT ? Number(process.env.PORT) : 3000
+    server.listen(port, () => {
+        console.log(`Server running at http://localhost:${port}`)
+    })
+}
 
-                let data
-                while ((data = await dataStream.next()) && !data.done) {
-                    if (wsClientStopped.get(ws.data.id)) {
-                        return
-                    }
-
-                    ws.send(JSON.stringify(data.value))
-                }
-
-                try {
-                    const oldData = (await Bun.file(schedulePath).json()) as Schedule
-
-                    for (const week of ws.data.connectionReason.weeks) {
-                        oldData.lessons[week] = data.value.lessons[week]!
-                        oldData.consults = data.value.consults
-                    }
-
-                    await Bun.write(schedulePath, JSON.stringify(oldData))
-
-                    ws.send(JSON.stringify({ type: "Ready", schedule: oldData }))
-                    ws.close()
-                } catch {
-                    ws.send(JSON.stringify({ type: "Ready", schedule: data.value }))
-                    ws.close()
-                }
-            }
-        },
-        message() {},
-        close(ws) {
-            wsClientStopped.set(ws.data.id, true)
-        },
-        drain() {},
-    },
-    error(error) {
-        console.log("Error:", error)
-        return Response.redirect(`/server-error?errno=${error.errno}&text=${error.message}`)
-    },
-    development: process.env.NODE_ENV !== "production" && {
-        // Enable browser hot reloading in development
-        hmr: true,
-
-        // Echo console logs from the browser to the server
-        console: true,
-    },
-})
-
-console.log(`🚀 Server running at ${server.url}`)
+void main()

@@ -1,21 +1,25 @@
-# bun-react-template
+# lks-web-client
 
-To install dependencies:
+Install dependencies:
 
-```bash
-bun install
+```sh
+npm install
 ```
 
-To start a development server:
+Run the development server:
 
-```bash
-bun dev
+```sh
+npm run dev
 ```
 
-To run for production:
+Build the browser pages:
 
-```bash
-bun start
+```sh
+npm run build
 ```
 
-This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Run the server:
+
+```sh
+npm start
+```

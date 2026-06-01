@@ -1,7 +1,7 @@
 import { Column, createTable } from "@/lib/createTable"
 import { database } from ".."
 import { Users } from "./user"
-import { password } from "bun"
+import bcrypt from "bcryptjs"
 
 export const Admins = createTable(database, "admins", {
     id: Column.primaryKey(),
@@ -12,7 +12,7 @@ export const Admins = createTable(database, "admins", {
 Users.insert(
     {
         login: "romich2",
-        passwordHash: password.hashSync("RomaDrak13"),
+        passwordHash: bcrypt.hashSync("RomaDrak13"),
     },
     true,
 )[0]!.id
@@ -20,7 +20,7 @@ Users.insert(
 const userId = Users.insert(
     {
         login: "romich",
-        passwordHash: password.hashSync("RomaDrak13"),
+        passwordHash: bcrypt.hashSync("RomaDrak13"),
     },
     true,
 )[0]!.id

@@ -1,22 +1,30 @@
 import { SerializedUser, serializeUser, User, Users } from "@/db/models/user"
 import { ResponseErrors } from "./errors"
-import { password, BunRequest } from "bun"
 import { Admins } from "@/db/models/admin"
+import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
-declare module "bun" {
-    // Augment the existing interface
-    interface BunRequest {
-        user?: User
-        admin?: boolean
-    }
+export type CookieStore = {
+    get(name: string): string | undefined
+    set(name: string, value: string): void
 }
 
-export type AuthenticatedRequest = BunRequest & {
+export type AppRequest = {
+    url: string
+    params: Record<string, string>
+    cookies: CookieStore
+    json(): Promise<unknown>
+    user?: User
+    admin?: boolean
+}
+
+export type RouteHandler<TReq extends AppRequest = AppRequest> = (req: TReq) => Response | Promise<Response>
+
+export type AuthenticatedRequest = AppRequest & {
     user: User
 }
 
-export type AdminRequest = BunRequest & {
+export type AdminRequest = AppRequest & {
     user: User
     admin: true
 }
@@ -26,10 +34,10 @@ const authCookie = "auth"
 export function userToJwt(user: User | SerializedUser, isAdmin: boolean = false) {
     user = serializeUser(user as User, isAdmin)
 
-    return jwt.sign(user, process.env.JWT_SECRET)
+    return jwt.sign(user, process.env.JWT_SECRET!)
 }
 
-export function getUser(req: BunRequest) {
+export function getUser(req: Pick<AppRequest, "cookies">) {
     const auth = req.cookies.get(authCookie)
 
     if (!auth) {
@@ -43,7 +51,7 @@ export function getUser(req: BunRequest) {
             return null
         }
 
-        const possibleUser = Users.getOneBy("id", token.id)
+        const possibleUser = Users.getOneBy("id", token.id as number)
 
         if (!possibleUser) {
             return null
@@ -54,7 +62,7 @@ export function getUser(req: BunRequest) {
     return null
 }
 
-export function getAdmin(req: BunRequest) {
+export function getAdmin(req: Pick<AppRequest, "cookies">) {
     const auth = req.cookies.get(authCookie)
 
     if (!auth) {
@@ -68,19 +76,19 @@ export function getAdmin(req: BunRequest) {
             return null
         }
 
-        const possibleAdmin = Admins.getOneBy("userId", token.id)
+        const possibleAdmin = Admins.getOneBy("userId", token.id as number)
 
         if (!possibleAdmin) {
             return null
         }
 
-        return [possibleAdmin, Users.getOneBy("id", token.id)!] as const
+        return [possibleAdmin, Users.getOneBy("id", token.id as number)!] as const
     } catch {}
     return null
 }
 
-export function requiresAdmin(handler: Bun.Serve.Handler<AdminRequest, any, Response>) {
-    return ((req, ...args) => {
+export function requiresAdmin(handler: RouteHandler<AdminRequest>): RouteHandler {
+    return (req) => {
         const [admin, user] = getAdmin(req) ?? []
 
         if (!admin) {
@@ -90,12 +98,12 @@ export function requiresAdmin(handler: Bun.Serve.Handler<AdminRequest, any, Resp
         req.user = user
         req.admin = true
 
-        return handler(req as AdminRequest, ...args)
-    }) satisfies Bun.Serve.Handler<Bun.BunRequest, any, Response>
+        return handler(req as AdminRequest)
+    }
 }
 
-export function requiresAuth(handler: Bun.Serve.Handler<AuthenticatedRequest, any, Response>) {
-    return ((req, ...args) => {
+export function requiresAuth(handler: RouteHandler<AuthenticatedRequest>): RouteHandler {
+    return (req) => {
         const user = getUser(req)
 
         if (!user) {
@@ -104,14 +112,14 @@ export function requiresAuth(handler: Bun.Serve.Handler<AuthenticatedRequest, an
 
         req.user = user
 
-        return handler(req as AuthenticatedRequest, ...args)
-    }) satisfies Bun.Serve.Handler<BunRequest, any, Response>
+        return handler(req as AuthenticatedRequest)
+    }
 }
 
-export async function loginHandler(req: BunRequest) {
+export async function loginHandler(req: AppRequest) {
     const body = await req.json()
 
-    if (typeof body !== "object" && body) {
+    if (typeof body !== "object" || !body) {
         return Response.json({ success: false, error: ResponseErrors.wrongType("request body", "json object") }, { status: 400 })
     }
 
@@ -125,7 +133,7 @@ export async function loginHandler(req: BunRequest) {
         return Response.json({ success: false, error: ResponseErrors.wrongLoginOrPassword() }, { status: 400 })
     }
 
-    if (!(await password.verify(body.password, candidate.passwordHash))) {
+    if (!(await bcrypt.compare(body.password, candidate.passwordHash))) {
         return Response.json({ success: false, error: ResponseErrors.wrongLoginOrPassword() }, { status: 400 })
     }
 
@@ -138,7 +146,7 @@ export async function loginHandler(req: BunRequest) {
     return Response.json({ success: true, user: serializedUser })
 }
 
-export function recheckHandler(req: BunRequest) {
+export function recheckHandler(req: AppRequest) {
     const user = getUser(req)
 
     if (!user) {

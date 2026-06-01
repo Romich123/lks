@@ -3,9 +3,10 @@ import { Equipment } from "@/db/models/equipment"
 import { Lessons } from "@/db/models/lesson"
 import { Teachers } from "@/db/models/teacher"
 import { ResponseErrors } from "./errors"
-import { loginHandler, recheckHandler, requiresAdmin } from "./auth"
+import { RouteHandler, loginHandler, recheckHandler, requiresAdmin } from "./auth"
 import { Schedule } from "@/lib/nstuParsing"
 import { schedulePath, timeTablePath } from ".."
+import { readFile, writeFile } from "node:fs/promises"
 
 type TimetableAssignment = {
     startHour: number
@@ -173,7 +174,11 @@ export const apiRoutes = {
     "/api/schedule": {
         GET: async () => {
             try {
-                return new Response(await Bun.file(schedulePath).text())
+                return new Response(await readFile(schedulePath, "utf8"), {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                })
             } catch {
                 return Response.json({ lessons: [], consults: [] })
             }
@@ -186,7 +191,7 @@ export const apiRoutes = {
                     return Response.json({ success: false, error: ResponseErrors.wrongType("request body", "Schedule") }, { status: 400 })
                 }
 
-                await Bun.write(schedulePath, JSON.stringify(body))
+                await writeFile(schedulePath, JSON.stringify(body))
                 return Response.json({ success: true })
             } catch (e) {
                 console.error(e)
@@ -197,7 +202,7 @@ export const apiRoutes = {
     "/api/timetable": {
         GET: async () => {
             try {
-                return new Response(await Bun.file(timeTablePath).text(), {
+                return new Response(await readFile(timeTablePath, "utf8"), {
                     headers: {
                         "Content-Type": "application/json",
                     },
@@ -214,7 +219,7 @@ export const apiRoutes = {
                     return Response.json({ success: false, error: ResponseErrors.wrongType("request body", "Timetable") }, { status: 400 })
                 }
 
-                await Bun.write(timeTablePath, JSON.stringify(body))
+                await writeFile(timeTablePath, JSON.stringify(body))
                 return Response.json({ success: true })
             } catch (e) {
                 console.error(e)
@@ -222,4 +227,4 @@ export const apiRoutes = {
             }
         }),
     },
-} satisfies Bun.Serve.Routes<any, any>
+} satisfies Record<string, RouteHandler | Record<string, RouteHandler>>

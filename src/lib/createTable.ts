@@ -1,5 +1,9 @@
-import { Changes, Database, SQLiteError } from "bun:sqlite"
+import type Database from "better-sqlite3"
 import { Result } from "./Result"
+
+type Changes = Database.RunResult
+type SQLiteError = Error
+type DatabaseConnection = Database.Database
 
 type ForwardTypeMap<T> = T extends string ? "TEXT" : T extends number ? "REAL" | "INTEGER" : T extends null ? "NULL" : T extends Uint8Array ? "BLOB" : never
 
@@ -82,17 +86,12 @@ export type BlueprintToInsertInstance<T extends TableBlueprint<any>> = {
 
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
-export function isStrict(db: Database) {
-    try {
-        db.run("select $t as t", { $t: "1" } as any)
-        return false
-    } catch {
-        return true
-    }
+export function isStrict(db: DatabaseConnection) {
+    return true
 }
 
-export function isTableExists(db: Database, tableName: string) {
-    return !!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=$table`).get(tableName)
+export function isTableExists(db: DatabaseConnection, tableName: string) {
+    return !!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=$table`).get({ table: tableName })
 }
 
 export type ColumnInfo = {
@@ -397,7 +396,7 @@ function softlyTypeBlueprintInstance<T extends TableBlueprint<any>>(blueprint: T
 }
 
 export function createTable<TableName extends string, B extends TableBlueprint<any>, T = Expand<BlueprintToInstance<B>>>(
-    db: Database,
+    db: DatabaseConnection,
     tableName: TableName,
     blueprint: B,
     options?: TableCreationOptions,
@@ -420,7 +419,7 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
         const tempTableName = `${tableName}__temp__`
         const backupTableName = `${tableName}__backup__`
 
-        db.run(`CREATE TABLE IF NOT EXISTS ${tempTableName} (
+        db.exec(`CREATE TABLE IF NOT EXISTS ${tempTableName} (
             ${blueprintKeys.map((columnName) => columnCreateString(columnName, blueprint[columnName]!)).join(",\n")}
         )`)
 
@@ -429,8 +428,8 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
             .map((column) => `\`${column}\``)
             .join(", ")
 
-        db.run(`INSERT INTO ${tempTableName} (${oldNewColumns}) SELECT ${oldNewColumns} FROM ${tableName}`)
-        db.run(`PRAGMA foreign_keys = OFF;
+        db.exec(`INSERT INTO ${tempTableName} (${oldNewColumns}) SELECT ${oldNewColumns} FROM ${tableName}`)
+        db.exec(`PRAGMA foreign_keys = OFF;
                 ALTER TABLE ${tableName} RENAME TO ${backupTableName};
                 ALTER TABLE ${tempTableName} RENAME TO ${tableName};
                 PRAGMA foreign_keys = ON;`)
@@ -439,7 +438,7 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
     })
 
     if (Object.keys(currentColumns).length === 0 || isEqualColumns(currentColumns, blueprint) || options?.ignoreTableDifference) {
-        db.run(`CREATE TABLE IF NOT EXISTS ${tableName} (
+        db.exec(`CREATE TABLE IF NOT EXISTS ${tableName} (
             ${blueprintKeys.map((columnName) => columnCreateString(columnName, blueprint[columnName]!)).join(",\n")}
         )`)
     } else if (options?.autoMigrate) {
@@ -448,19 +447,19 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
         throw new Error(`Table ${tableName} already exists and is different to expected`)
     }
 
-    const getAllQuery = db.query(`SELECT * FROM ${tableName}`)
+    const getAllQuery = db.prepare(`SELECT * FROM ${tableName}`)
 
     const names = blueprintKeys.join(", ")
     const valuePlaceholders = blueprintKeys.map((x) => "$" + x).join(", ")
 
-    const insertQuery = keysNoPrimaries.length !== 0 ? db.query(`INSERT INTO ${tableName} (${names}) VALUES (${valuePlaceholders})`) : db.query(`INSERT INTO ${tableName} DEFAULT VALUES`)
+    const insertQuery = keysNoPrimaries.length !== 0 ? db.prepare(`INSERT INTO ${tableName} (${names}) VALUES (${valuePlaceholders})`) : db.prepare(`INSERT INTO ${tableName} DEFAULT VALUES`)
     const updateAssignments = keysNoPrimaries.map((columnName) => `${columnName} = $${columnName}`).join(", ")
     const updateQuery =
         keysNoPrimaries.length !== 0
-            ? db.query(`UPDATE ${tableName} SET ${updateAssignments} WHERE ${primaryKey} = $${primaryKey}`)
-            : db.query(`UPDATE ${tableName} SET ${primaryKey} = $${primaryKey} WHERE ${primaryKey} = $${primaryKey}`)
+            ? db.prepare(`UPDATE ${tableName} SET ${updateAssignments} WHERE ${primaryKey} = $${primaryKey}`)
+            : db.prepare(`UPDATE ${tableName} SET ${primaryKey} = $${primaryKey} WHERE ${primaryKey} = $${primaryKey}`)
 
-    const insertGetBackQuery = db.query(`SELECT * FROM ${tableName} WHERE ${primaryKey} = $id`)
+    const insertGetBackQuery = db.prepare(`SELECT * FROM ${tableName} WHERE ${primaryKey} = $id`)
 
     const defaultInstance = Object.fromEntries(blueprintKeys.map((columnName) => [columnName, blueprint[columnName]?.default ?? null]))
 
@@ -578,7 +577,7 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
                 return [changes, null]
             }
 
-            return [insertGetBackQuery.get(changes.lastInsertRowid) as any, null]
+            return [insertGetBackQuery.get({ id: changes.lastInsertRowid }) as any, null]
         } catch (e: any) {
             return [null, e]
         }
@@ -604,7 +603,7 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
                 return [changes, null]
             }
 
-            return [insertGetBackQuery.get((softlyTypedInstance as any)[primaryKey]) as any, null]
+            return [insertGetBackQuery.get({ id: (softlyTypedInstance as any)[primaryKey] }) as any, null]
         } catch (e: any) {
             return [null, e]
         }
@@ -638,25 +637,25 @@ export function createTable<TableName extends string, B extends TableBlueprint<a
             // why the hell i can't just column = null
             // okay i understand now
             if (value === null) {
-                return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} IS NULL`).all(name) as any
+                return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} IS NULL`).all() as any
             }
 
-            return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} = $value`).all(value as BackTypeMap[keyof BackTypeMap]) as any
+            return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} = $value`).all({ value: value as BackTypeMap[keyof BackTypeMap] }) as any
         },
         getOneBy<K extends Exclude<keyof T, symbol>>(name: K, value: T[K]): T | undefined {
             if (value === null) {
-                return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} IS NULL LIMIT 1`).all(name)[0] as any
+                return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} IS NULL LIMIT 1`).all()[0] as any
             }
 
             // i cant set name after ?
-            return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} = $value LIMIT 1`).all(value as BackTypeMap[keyof BackTypeMap])[0] as any
+            return db.prepare(`SELECT * FROM ${tableName} WHERE ${name} = $value LIMIT 1`).all({ value: value as BackTypeMap[keyof BackTypeMap] })[0] as any
         },
         deleteAllBy<K extends Exclude<keyof T, symbol>>(name: K, value: T[K]) {
             if (value === null) {
                 db.prepare(`DELETE FROM ${tableName} WHERE ${name} IS NULL`).all()
                 return
             }
-            db.run(`DELETE FROM ${tableName} WHERE ${name} = $value`, [value as BackTypeMap[keyof BackTypeMap]])
+            db.prepare(`DELETE FROM ${tableName} WHERE ${name} = $value`).run({ value: value as BackTypeMap[keyof BackTypeMap] })
         },
         verifyInstance(possibleInstance?: any, omitKeys?: (keyof T)[]): possibleInstance is T {
             return softlyTypeBlueprintInstance(blueprint, possibleInstance, { omitKeys: omitKeys?.map(String) }) !== null
@@ -674,7 +673,7 @@ export const Column = Object.freeze({
 })
 
 export const Table = Object.freeze({
-    jsonTags<TableName extends string, B extends TableBlueprint<any>, T = Expand<BlueprintToInstance<B>>>(db: Database, tableName: TableName, requiredData: B, options?: TableCreationOptions) {
+    jsonTags<TableName extends string, B extends TableBlueprint<any>, T = Expand<BlueprintToInstance<B>>>(db: DatabaseConnection, tableName: TableName, requiredData: B, options?: TableCreationOptions) {
         const mainTable = createTable(db, tableName, requiredData, options)
 
         const mainPrimary = getPrimaryKeyOfBlueprint(mainTable)!
@@ -687,7 +686,7 @@ export const Table = Object.freeze({
             data: { type: "TEXT", nullable: true },
         })
 
-        const getAllQuery = db.query(`
+        const getAllQuery = db.prepare(`
         SELECT 
             main.*,
             COALESCE(
@@ -707,7 +706,7 @@ export const Table = Object.freeze({
         FROM ${tableName} main`)
 
         const requiredKeys = Object.keys(requiredData)
-        const getOneQuery = db.query(`
+        const getOneQuery = db.prepare(`
         SELECT 
             main.*,
             COALESCE(
@@ -831,7 +830,7 @@ export const Table = Object.freeze({
             }
         }
 
-        const getAllKeysquery = db.query(`SELECT DISTINCT key FROM ${tagsTableName}`)
+        const getAllKeysquery = db.prepare(`SELECT DISTINCT key FROM ${tagsTableName}`)
 
         const resultBlueprint = structuredClone(requiredData) as BlueprintToReady<B>
 
@@ -873,7 +872,7 @@ export const Table = Object.freeze({
                     db.prepare(`DELETE FROM ${tableName} WHERE ${name} IS NULL`).all()
                     return
                 }
-                db.run(`DELETE FROM ${tableName} WHERE ${name} = $value`, [value as BackTypeMap[keyof BackTypeMap]])
+                db.prepare(`DELETE FROM ${tableName} WHERE ${name} = $value`).run({ value: value as BackTypeMap[keyof BackTypeMap] })
             },
             getAllTagKeys() {
                 return (getAllKeysquery.all() as { key: string }[]).map((row) => row.key)
