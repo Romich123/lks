@@ -4,7 +4,7 @@ import { urls } from "./pages/urls"
 import { fetchNSTUFacultyGroups, fetchNSTUSchedule, Schedule } from "./lib/nstuParsing"
 import express, { Request, Response as ExpressResponse } from "express"
 import { createServer } from "node:http"
-import { readFile, writeFile } from "node:fs/promises"
+import { access, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { randomUUID } from "node:crypto"
@@ -159,13 +159,37 @@ async function registerPageRoutes(app: express.Express) {
 
     if (isProduction) {
         const publicDir = path.join(projectRoot, "dist/public")
+        console.log(`Serving production pages from ${publicDir}`)
+
+        try {
+            await access(publicDir)
+        } catch {
+            throw new Error(`Production build directory not found: ${publicDir}. Run npm run build before npm start.`)
+        }
+
         app.use(express.static(publicDir))
 
         for (const [route, htmlPath] of pageMap) {
-            app.get(route, (_req, res) => res.sendFile(path.join(publicDir, htmlPath)))
+            const pageFile = path.join(publicDir, htmlPath)
+            app.get([route, route === "/" ? "/index" : `${route}/`], async (_req, res, next) => {
+                try {
+                    await access(pageFile)
+                    res.sendFile(pageFile)
+                } catch (error) {
+                    next(error)
+                }
+            })
         }
 
-        app.use((_req, res) => res.status(404).sendFile(path.join(publicDir, "404/index.html")))
+        app.use(async (_req, res, next) => {
+            const notFoundFile = path.join(publicDir, "404/index.html")
+            try {
+                await access(notFoundFile)
+                res.status(404).sendFile(notFoundFile)
+            } catch (error) {
+                next(error)
+            }
+        })
         return
     }
 
@@ -175,10 +199,8 @@ async function registerPageRoutes(app: express.Express) {
         appType: "custom",
     })
 
-    app.use(vite.middlewares)
-
     for (const [route, htmlPath] of pageMap) {
-        app.get(route, async (req, res, next) => {
+        app.get([route, route === "/" ? "/index" : `${route}/`], async (req, res, next) => {
             try {
                 const sourcePath = path.join(projectRoot, "src/pages", htmlPath)
                 const html = await readFile(sourcePath, "utf8")
@@ -191,6 +213,8 @@ async function registerPageRoutes(app: express.Express) {
             }
         })
     }
+
+    app.use(vite.middlewares)
 
     app.use(async (req, res, next) => {
         try {
