@@ -576,7 +576,7 @@ function App() {
 
                             const newWeek = Number(rawValue)
 
-                            const bad = !Number.isSafeInteger(newWeek) || newWeek < 1 || newWeek > 18
+                            const bad = !Number.isSafeInteger(newWeek) || newWeek < 1
                             setWeekFaulty(bad)
 
                             if (!bad) {
