@@ -1,11 +1,12 @@
 import { JSDOM } from "jsdom"
+import { writeFileSync } from "node:fs"
 
 export type ConsultingData = {
     weekIndex: number
     weekDayIndex: number
     room: string
 
-    type: "Консультация" | "Экзамен"
+    type: string
 
     timeStart: readonly [number, number]
     timeEnd: readonly [number, number]
@@ -436,14 +437,29 @@ export async function* fetchNSTUSchedule(
 }
 
 export async function fetchNSTUFacultyGroups(facultyId: string) {
-    const groupsSite = new JSDOM(await (await fetch(`https://nstu.ru/studies/schedule/schedule_classes`)).text()).window.document
+    const classesSite = new JSDOM(await (await fetch(`https://nstu.ru/studies/schedule/schedule_classes`)).text()).window.document
+    const sessionSite = new JSDOM(await (await fetch(`https://nstu.ru/studies/schedule/schedule_session`)).text()).window.document
 
-    const faculties = groupsSite.querySelectorAll(`.schedule__faculty.js-schedule-faculty:is([data-id="${facultyId}"])`)
+    const facultyClass = classesSite.querySelector(`.schedule__faculty.js-schedule-faculty[data-id="${facultyId}"]`)
+    const facultySession = sessionSite.querySelector(`.schedule__faculty.js-schedule-faculty[data-id="${facultyId}"]`)
 
-    const groups = Array.from(faculties)
-        .flatMap((fac) => Array.from(fac.querySelectorAll(".schedule__faculty-groups__item")))
-        .map((el) => el.textContent)
-        .filter(Boolean) as string[]
+    const result = new Set<string>()
 
-    return groups
+    if (facultyClass) {
+        ;(
+            Array.from(facultyClass.querySelectorAll("a.schedule__faculty-groups__item"))
+                .map((el) => el.textContent)
+                .filter(Boolean) as string[]
+        ).forEach((val) => result.add(val))
+    }
+
+    if (facultySession) {
+        ;(
+            Array.from(facultySession.querySelectorAll("a.schedule__faculty-groups__item"))
+                .map((el) => el.textContent)
+                .filter(Boolean) as string[]
+        ).forEach((val) => result.add(val))
+    }
+
+    return Array.from(result)
 }

@@ -323,6 +323,12 @@ function App() {
 
         setSaveError(null)
         setLoadingWeek(selectedWeek)
+        setAllSchedule((prev) => {
+            const next: Schedule = { lessons: [...prev.lessons], consults: [...prev.consults] }
+            next.lessons[selectedWeek] = []
+            next.consults[selectedWeek] = []
+            return next
+        })
         const ws = new WebSocket("/parse-schedule?week=" + selectedWeek)
 
         ws.onmessage = (e) => {
