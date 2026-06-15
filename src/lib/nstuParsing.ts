@@ -320,7 +320,7 @@ export async function fetchNSTUExams(group: string, neededRooms: string[]) {
         result.push({
             ...weekInfo,
             room: classInfo,
-            teacher: teacherInfo.map((x) => x.textContent.trim()).join(", "),
+            teacher: Array.from(new Set(teacherInfo.map((x) => x.textContent.trim()))).join(", "),
             type: typeInfo as any,
             timeStart: time,
             timeEnd: timeEnd,
