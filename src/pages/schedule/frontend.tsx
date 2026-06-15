@@ -90,7 +90,7 @@ function formatDate(date: Date) {
 }
 
 const todayDateInfo = getWeekInfo(new Date())
-let defaultDay = todayDateInfo.weekDayIndex + 1
+let defaultDay = todayDateInfo.weekDayIndex
 let defaultWeek = todayDateInfo.weekIndex
 
 if (defaultDay > 5) {
