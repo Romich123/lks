@@ -358,6 +358,10 @@ export async function* fetchNSTUSchedule(
                 throw new Error()
             }
 
+            if (weekIndex > 18) {
+                continue
+            }
+
             const weekResult = fetchNSTUGroupWeek(task.group, task.weekIndex, rooms)
 
             let update

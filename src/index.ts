@@ -232,7 +232,7 @@ async function registerPageRoutes(app: express.Express) {
 async function runScheduleParsing(ws: WebSocket, id: string, weeks: number[]) {
     wsClientStopped.set(id, false)
 
-    const groups = await fetchNSTUFacultyGroups("2")
+    const groups = [...(await fetchNSTUFacultyGroups("2")), ...(await fetchNSTUFacultyGroups("13"))]
     const dataStream = fetchNSTUSchedule(groups, neededRooms, weeks)
 
     let data
