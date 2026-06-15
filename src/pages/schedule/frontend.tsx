@@ -331,12 +331,29 @@ function App() {
 
                 if (event.type === "Lesson") {
                     const lesson = event.lesson
-                    allSchedule.lessons ??= []
-                    allSchedule.lessons[lesson.weekIndex] ??= []
-                    allSchedule.lessons[lesson.weekIndex]![lesson.weekDayIndex] ??= {}
-                    allSchedule.lessons[lesson.weekIndex]![lesson.weekDayIndex]![lesson.room] ??= []
-                    allSchedule.lessons[lesson.weekIndex]![lesson.weekDayIndex]![lesson.room]![lesson.lessonIndex] = lesson
-                    setAllSchedule({ ...allSchedule })
+                    setAllSchedule((prev) => {
+                        const next: Schedule = { lessons: [...prev.lessons], consults: [...prev.consults] }
+                        next.lessons[lesson.weekIndex] = [...(next.lessons[lesson.weekIndex] ?? [])]
+                        next.lessons[lesson.weekIndex]![lesson.weekDayIndex] = { ...(next.lessons[lesson.weekIndex]![lesson.weekDayIndex] ?? {}) }
+                        next.lessons[lesson.weekIndex]![lesson.weekDayIndex]![lesson.room] = [...(next.lessons[lesson.weekIndex]![lesson.weekDayIndex]![lesson.room] ?? [])]
+                        next.lessons[lesson.weekIndex]![lesson.weekDayIndex]![lesson.room]![lesson.lessonIndex] = lesson
+                        return next
+                    })
+                    setIsDirty(true)
+                } else if (event.type === "Consult") {
+                    const consult = event.consult
+                    setAllSchedule((prev) => {
+                        const next: Schedule = { lessons: [...prev.lessons], consults: [...prev.consults] }
+                        next.consults[consult.weekIndex] = [...(next.consults[consult.weekIndex] ?? [])]
+                        next.consults[consult.weekIndex]![consult.weekDayIndex] = { ...(next.consults[consult.weekIndex]![consult.weekDayIndex] ?? {}) }
+                        next.consults[consult.weekIndex]![consult.weekDayIndex]![consult.room] = [...(next.consults[consult.weekIndex]![consult.weekDayIndex]![consult.room] ?? [])]
+
+                        for (let i = consult.lessonStart; i <= consult.lessonEnd; i++) {
+                            next.consults[consult.weekIndex]![consult.weekDayIndex]![consult.room]![i] = consult
+                        }
+
+                        return next
+                    })
                     setIsDirty(true)
                 } else if (event.type === "Ready") {
                     setAllSchedule(event.schedule)
@@ -345,7 +362,7 @@ function App() {
                 }
             } catch {}
         }
-    }, [selectedWeek, allSchedule, requestAdmin])
+    }, [selectedWeek, requestAdmin])
 
     useEffect(() => {
         loadSchedule()

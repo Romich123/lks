@@ -49,6 +49,10 @@ export type ScheduleFetchingUpdate =
           lesson: LessonData
       }
     | {
+          type: "Consult"
+          consult: ConsultingData
+      }
+    | {
           type: "Intersection"
           weekIndex: number
           weekDayIndex: number
@@ -409,6 +413,8 @@ export async function* fetchNSTUSchedule(
             for (let i = lessonStart; i <= lessonEnd; i++) {
                 result.consults[weekIndex][weekDayIndex][room][i] = consult
             }
+
+            yield { type: "Consult", consult }
         }
 
         // exams are more important, so override existing
@@ -421,6 +427,8 @@ export async function* fetchNSTUSchedule(
             for (let i = lessonStart; i <= lessonEnd; i++) {
                 result.consults[weekIndex][weekDayIndex][room][i] = consult
             }
+
+            yield { type: "Consult", consult }
         }
     }
 
