@@ -106,6 +106,10 @@ function timeToLessonIndex(time: readonly [number, number]) {
     throw new Error()
 }
 
+function compareTimeStart(a: { timeStart: readonly [number, number] }, b: { timeStart: readonly [number, number] }) {
+    return a.timeStart[0] - b.timeStart[0] || a.timeStart[1] - b.timeStart[1]
+}
+
 export async function* fetchNSTUGroupWeek(group: string, weekIndex: number, neededRooms: string[]): AsyncGenerator<ScheduleFetchingUpdate, LessonData[], void> {
     try {
         const response = await fetch(`https://nstu.ru/studies/schedule/schedule_classes/schedule?group=${group}&week=${weekIndex}`)
@@ -397,40 +401,44 @@ export async function* fetchNSTUSchedule(
         await new Promise((resolve) => setTimeout(resolve, batchDelay))
     }
 
+    const consultingData: ConsultingData[] = []
+    const examsData: ConsultingData[] = []
+
     for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
         const group = groups[groupIndex]!
 
         yield { type: "NewBatchStarted", progress: tasks.length + groupIndex + 1, maxProgress: tasks.length + groups.length }
 
-        const consultingData = await fetchNSTUConsult(group, rooms, maxWeek)
-        const examsData = await fetchNSTUExams(group, rooms)
+        consultingData.push(...(await fetchNSTUConsult(group, rooms, maxWeek)))
+        examsData.push(...(await fetchNSTUExams(group, rooms)))
+    }
 
-        for (const consult of consultingData) {
-            const { weekIndex, weekDayIndex, room, lessonStart, lessonEnd } = consult
-            result.consults[weekIndex] ??= []
-            result.consults[weekIndex][weekDayIndex] ??= {}
-            result.consults[weekIndex][weekDayIndex][room] ??= []
+    for (const consult of consultingData) {
+        const { weekIndex, weekDayIndex, room, lessonStart, lessonEnd } = consult
+        result.consults[weekIndex] ??= []
+        result.consults[weekIndex][weekDayIndex] ??= {}
+        result.consults[weekIndex][weekDayIndex][room] ??= []
 
-            for (let i = lessonStart; i <= lessonEnd; i++) {
-                result.consults[weekIndex][weekDayIndex][room][i] = consult
-            }
-
-            yield { type: "Consult", consult }
+        for (let i = lessonStart; i <= lessonEnd; i++) {
+            result.consults[weekIndex][weekDayIndex][room][i] = consult
         }
 
-        // exams are more important, so override existing
-        for (const consult of examsData) {
-            const { weekIndex, weekDayIndex, room, lessonStart, lessonEnd } = consult
-            result.consults[weekIndex] ??= []
-            result.consults[weekIndex][weekDayIndex] ??= {}
-            result.consults[weekIndex][weekDayIndex][room] ??= []
+        yield { type: "Consult", consult }
+    }
 
-            for (let i = lessonStart; i <= lessonEnd; i++) {
-                result.consults[weekIndex][weekDayIndex][room][i] = consult
-            }
+    // Exams are more important than consults. Later exams should also win
+    // overlapping lesson slots because they start inside the next lesson.
+    for (const consult of examsData.sort(compareTimeStart)) {
+        const { weekIndex, weekDayIndex, room, lessonStart, lessonEnd } = consult
+        result.consults[weekIndex] ??= []
+        result.consults[weekIndex][weekDayIndex] ??= {}
+        result.consults[weekIndex][weekDayIndex][room] ??= []
 
-            yield { type: "Consult", consult }
+        for (let i = lessonStart; i <= lessonEnd; i++) {
+            result.consults[weekIndex][weekDayIndex][room][i] = consult
         }
+
+        yield { type: "Consult", consult }
     }
 
     return result
