@@ -111,6 +111,10 @@ function compareTimeStart(a: { timeStart: readonly [number, number] }, b: { time
 }
 
 export async function* fetchNSTUGroupWeek(group: string, weekIndex: number, neededRooms: string[]): AsyncGenerator<ScheduleFetchingUpdate, LessonData[], void> {
+    if (weekIndex > 18) {
+        return []
+    }
+
     try {
         const response = await fetch(`https://nstu.ru/studies/schedule/schedule_classes/schedule?group=${group}&week=${weekIndex}`)
 
@@ -296,14 +300,8 @@ export async function fetchNSTUExams(group: string, neededRooms: string[]) {
 
     const result: ConsultingData[] = []
 
-    for (const row of rows) {
-        const classInfo = row.querySelector(".schedule__session-class")!.textContent.trim()
-
-        if (!neededRooms.includes(classInfo)) {
-            continue
-        }
-
-        const [dateStr, monthStr, yearStr] = row.querySelector(".schedule__session-day")!.textContent.split(".")
+    for (const dayRow of rows) {
+        const [dateStr, monthStr, yearStr] = dayRow.querySelector(".schedule__session-day")!.textContent.split(".")
 
         const dDate = new Date(Number(yearStr) + 2000, Number(monthStr) - 1, Number(dateStr))
 
@@ -312,25 +310,32 @@ export async function fetchNSTUExams(group: string, neededRooms: string[]) {
         if (weekInfo.weekDayIndex < 0 || weekInfo.weekIndex < 1) {
             continue
         }
+        for (const row of dayRow.querySelectorAll(":scope>.schedule__session-cell>.schedule__session-row")) {
+            const classInfo = row.querySelector(".schedule__session-class")!.textContent.trim()
 
-        const timeInfo = row.querySelector(".schedule__session-time")!.textContent.trim()
-        const typeInfo = row.querySelector(".schedule__session-label")!.textContent.trim()
+            if (!neededRooms.includes(classInfo)) {
+                continue
+            }
 
-        const time = timeInfo.split(":").map(Number) as [number, number]
-        const timeEnd = [time[0] + 2, time[1]] as const
+            const timeInfo = row.querySelector(".schedule__session-time")!.textContent.trim()
+            const typeInfo = row.querySelector(".schedule__session-label")!.textContent.trim()
 
-        const teacherInfo = Array.from(row.querySelectorAll(`a[href^="https://ciu.nstu.ru/"]`))
+            const time = timeInfo.split(":").map(Number) as [number, number]
+            const timeEnd = [time[0] + 2, time[1]] as const
 
-        result.push({
-            ...weekInfo,
-            room: classInfo,
-            teacher: Array.from(new Set(teacherInfo.map((x) => x.textContent.trim()))).join(", "),
-            type: typeInfo as any,
-            timeStart: time,
-            timeEnd: timeEnd,
-            lessonStart: timeToLessonIndex(time),
-            lessonEnd: timeToLessonIndex(time) + 1,
-        })
+            const teacherInfo = Array.from(row.querySelectorAll(`a[href^="https://ciu.nstu.ru/"]`))
+
+            result.push({
+                ...weekInfo,
+                room: classInfo,
+                teacher: Array.from(new Set(teacherInfo.map((x) => x.textContent.trim()))).join(", "),
+                type: typeInfo as any,
+                timeStart: time,
+                timeEnd: timeEnd,
+                lessonStart: timeToLessonIndex(time),
+                lessonEnd: timeToLessonIndex(time) + 1,
+            })
+        }
     }
 
     return result
