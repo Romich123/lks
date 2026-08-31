@@ -6,6 +6,7 @@ import { authContext } from "../shared/auth/AuthProvider"
 import { AlertsProvider } from "../shared/alerts/AlertsProvider"
 import "../reset.css"
 import { ConsultingData, LessonData, Schedule, ScheduleFetchingUpdate } from "@/lib/nstuParsing"
+import { firstWeekFirstDay } from "@/constants";
 
 const elem = document.getElementById("root")!
 
@@ -18,7 +19,6 @@ const lessonTimesFull = [
     { start: "17:30", end: "19:00" },
 ]
 
-const firstWeekFirstDay = new Date(2026, 1, 9)
 const weekDays = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 const neededRooms = [

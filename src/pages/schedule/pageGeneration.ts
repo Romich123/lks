@@ -10,11 +10,10 @@ const lessonTimesFull = [
 ]
 
 const lessonTimes = ["8:30-10:00", "10:15-11:45", "12:00-13:30", "14:00-15:30", "15:45-17:15", "17:30-19:00"]
-const firstEverDate = new Date(2026, 1, 9)
 const weekDays = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 function getSignatureTableHead(dateOffset: number) {
-    const date = new Date(+firstEverDate + dateOffset * 24 * 60 * 60 * 1000)
+    const date = new Date(+firstWeekFirstDay + dateOffset * 24 * 60 * 60 * 1000)
     let upRow = `<th class="bf" style="break-before: page;">Дата</th>`
     let bottomRow = `<th>${date.getDate()}.${(date.getMonth() + 1 + "").padStart(2, "0")}.${date.getFullYear()}</th>`
 

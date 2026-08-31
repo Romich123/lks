@@ -1,3 +1,4 @@
+import { firstWeekFirstDay } from "@/constants";
 import { JSDOM } from "jsdom"
 import { writeFileSync } from "node:fs"
 
@@ -62,8 +63,6 @@ export type ScheduleFetchingUpdate =
           teacherA: string
           teacherB: string
       }
-
-const firstWeekFirstDay = new Date(2026, 1, 9)
 
 function getWeekInfo(lessonDate: Date): { weekIndex: number; weekDayIndex: number } {
     const lesson = new Date(lessonDate)
