@@ -1,0 +1,38 @@
+.equipmentTableWrapper {
+    width: 100%;
+    padding: 2em 2em;
+}
+
+@media print {
+    .weekInputLabel {
+        display: none;
+    }
+}
+
+.mainTable {
+    background-color: white;
+    color: black;
+    font-size: 20px;
+}
+
+@media print {
+    .mainTable {
+        height: 90vh;
+    }
+}
+
+.mainTable td {
+    text-align: center;
+    color: gray;
+}
+
+.mainTable th {
+    color: black;
+    font-weight: bold;
+}
+
+.mainTable td,
+.mainTable th {
+    border: 3px solid black;
+    vertical-align: middle;
+}

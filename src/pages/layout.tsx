@@ -47,6 +47,9 @@ export function PageLayout(props: React.PropsWithChildren) {
                                     <li className="side-menu-item">
                                         <a href={urls.timetableShow}>Рабочее время (показ)</a>
                                     </li>
+                                    <li className="side-menu-item">
+                                        <a href={urls.cleaningSignatures}>Уборка подписи</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>

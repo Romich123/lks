@@ -24,7 +24,9 @@
     --header-height: 40px;
 }
 
-body, html, #root {
+body,
+html,
+#root {
     height: 100%;
     overflow: hidden;
 }
@@ -83,7 +85,15 @@ input[type="submit"] {
     padding-top: 1em;
 }
 
-#page-side-menu > nav > ul {
+@media print {
+    #page-side-menu, #page-header {
+        opacity: 0;
+        width: 0 !important;
+        height: 0 !important;
+    }
+}
+
+#page-side-menu>nav>ul {
     display: flex;
     flex-direction: column;
     gap: 1em;
@@ -108,12 +118,12 @@ input[type="submit"] {
     margin-bottom: 2em;
 }
 
-.page-menu-category > header {
+.page-menu-category>header {
     margin-bottom: 1em;
     font-weight: bold;
 }
 
-.page-menu-category > ul {
+.page-menu-category>ul {
     display: flex;
     flex-direction: column;
 

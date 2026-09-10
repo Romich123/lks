@@ -26,6 +26,7 @@ export default defineConfig({
                 timetableShow: path.join(pagesRoot, "timetabled/show/index.html"),
                 notFound: path.join(pagesRoot, "404/index.html"),
                 serverError: path.join(pagesRoot, "500/index.html"),
+                cleaningSignatures: path.join(pagesRoot, "cleaningSignatures/index.html"),
             },
         },
     },

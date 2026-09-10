@@ -150,6 +150,7 @@ async function registerPageRoutes(app: express.Express) {
     const pageMap = new Map([
         [urls.index, "index/index.html"],
         [urls.classrooms, "classrooms/index.html"],
+        [urls.classrooms, "classrooms/index.html"],
         [urls.equipment, "equipment/index.html"],
         [urls.schedule, "schedule/index.html"],
         [urls.timetableShow, "timetabled/show/index.html"],
