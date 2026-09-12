@@ -2,7 +2,7 @@ import { apiRoutes } from "./api"
 import { AppRequest, CookieStore, RouteHandler, getAdmin } from "./api/auth"
 import { urls } from "./pages/urls"
 import { fetchNSTUFacultyGroups, fetchNSTUSchedule, Schedule } from "./lib/nstuParsing"
-import express, { Request, Response as ExpressResponse } from "express"
+import express, { Request, Response as ExpressResponse, NextFunction, ErrorRequestHandler } from "express"
 import { createServer } from "node:http"
 import { access, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
@@ -265,9 +265,34 @@ async function runScheduleParsing(ws: WebSocket, id: string, weeks: number[]) {
 
 const wsClientStopped = new Map<string, boolean>()
 
+const errorHandler: ErrorRequestHandler<
+    Record<string, unknown>,
+    unknown,
+    unknown,
+    Record<string, unknown>,
+    Record<string, unknown>
+> = (err, req, res, next) => {
+    // Проверяем, что это ошибка парсинга JSON от body-parser
+    if (
+        err instanceof SyntaxError &&
+        'status' in err &&
+        (err as { status?: number }).status === 400 &&
+        'body' in err
+    ) {
+        res.status(400).json({
+            error: 'Некорректный JSON',
+            details: err.message, // лучше убрать в продакшене
+        })
+        return
+    }
+}
+
+
 async function main() {
     const app = express()
     app.use(express.json({ limit: "10mb" }))
+
+    app.use(errorHandler)
 
     registerApiRoutes(app)
     await registerPageRoutes(app)
