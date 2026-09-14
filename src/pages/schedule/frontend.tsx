@@ -572,6 +572,9 @@ function App() {
     return (
         <>
             <header className={styles.header}>
+                <a href="/" className={styles.loadButton}>
+                    Назад
+                </a>
                 <button className={styles.loadButton} onClick={loadSelectedWeek}>
                     Загрузить
                 </button>
