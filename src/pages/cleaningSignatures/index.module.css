@@ -19,6 +19,10 @@
     .mainTable {
         height: 90vh;
     }
+
+    body {
+        background-color: white;
+    }
 }
 
 .mainTable td {
