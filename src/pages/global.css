@@ -85,14 +85,6 @@ input[type="submit"] {
     padding-top: 1em;
 }
 
-@media print {
-    #page-side-menu, #page-header {
-        opacity: 0;
-        width: 0 !important;
-        height: 0 !important;
-    }
-}
-
 #page-side-menu>nav>ul {
     display: flex;
     flex-direction: column;
@@ -158,4 +150,31 @@ input[type="submit"] {
     display: flex;
     flex-direction: column;
     padding-bottom: 2em;
+}
+
+@media print {
+    :root,
+    #root {
+        color-scheme: light;
+    }
+
+    #page-side-menu,
+    #page-header {
+        opacity: 0;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    #page-actual-content-wrapper,
+    #page-actual-content,
+    #page-content {
+        display: contents !important;
+    }
+
+    *,
+    *:before,
+    *:after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
 }
