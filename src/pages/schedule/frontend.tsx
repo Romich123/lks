@@ -680,7 +680,6 @@ function App() {
                         </h3>
                         <label>
                             Преподаватель
-                            {editingCell.name}
                             <input className={styles.input} value={editingCell.teacher} onChange={(e) => setEditingCell((prev) => (prev ? { ...prev, teacher: e.target.value } : prev))} />
                         </label>
                         <label>
