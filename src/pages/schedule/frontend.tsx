@@ -118,6 +118,7 @@ type EditTarget = {
     room: string
     teacher: string
     type: string
+    name: string
     entryType: "lesson" | "consult"
 }
 
@@ -150,6 +151,7 @@ function RoomTopCell({
                 teacher: lesson.teacher ?? "",
                 type: lesson.type ?? "",
                 entryType: "lesson",
+                name: lesson.name
             })
         } else if (consult) {
             onEdit({
@@ -160,6 +162,7 @@ function RoomTopCell({
                 teacher: consult.teacher ?? "",
                 type: consult.type ?? "",
                 entryType: "consult",
+                name: "Консультация"
             })
         } else {
             onEdit({
@@ -170,6 +173,7 @@ function RoomTopCell({
                 teacher: "",
                 type: "",
                 entryType: "lesson",
+                name: ""
             })
         }
     }
@@ -669,13 +673,14 @@ function App() {
                 </div>
             )}
             {editingCell && (
-                <div className={styles.editOverlay} onClick={() => setEditingCell(null)}>
+                <div className={styles.editOverlay} onMouseDown={() => setEditingCell(null)}>
                     <div className={styles.editMenu} onClick={(e) => e.stopPropagation()}>
                         <h3>
-                            {editingCell.room}, {selectedDateLabel}
+                            {editingCell.room}, {selectedDateLabel}, {editingCell.name}
                         </h3>
                         <label>
                             Преподаватель
+                            {editingCell.name}
                             <input className={styles.input} value={editingCell.teacher} onChange={(e) => setEditingCell((prev) => (prev ? { ...prev, teacher: e.target.value } : prev))} />
                         </label>
                         <label>

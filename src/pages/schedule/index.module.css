@@ -29,7 +29,7 @@
     color: white;
     color-scheme: light;
     background-color: #111;
-    font-family: 'Times New Roman', Times, serif;
+    font-family: "Times New Roman", Times, serif;
     line-height: 1;
 }
 
@@ -88,8 +88,10 @@ body {
     cursor: pointer;
 }
 
-.loadButton:hover {
-    background-color: var(--background-1);
+@media screen {
+    .loadButton:hover {
+        background-color: var(--background-1);
+    }
 }
 
 .dateChoosing {
@@ -114,8 +116,10 @@ body {
     cursor: pointer;
 }
 
-.daySelection button:hover {
-    background-color: var(--background-1);
+@media screen {
+    .daySelection button:hover {
+        background-color: var(--background-1);
+    }
 }
 
 .daySelection button.selected {
@@ -184,7 +188,7 @@ body {
 
 .empty {
     color: #999;
-    background-color: #CCC;
+    background-color: #ccc;
 }
 
 .teacherName {
@@ -203,7 +207,7 @@ body {
 .rowRoomName {
     font-size: 30px;
     font-weight: bold;
-    background-color: #CCC;
+    background-color: #ccc;
     vertical-align: middle;
 }
 
@@ -235,15 +239,17 @@ body {
 
 .loadingIndicator > svg {
     transform-origin: center;
-    animation: spinner .75s infinite linear
+    animation: spinner 0.75s infinite linear;
 }
 
 .editableCell {
     cursor: pointer;
 }
 
-.editableCell:hover {
-    background-color: #eef5ff;
+@media screen {
+    .editableCell:hover {
+        background-color: #eef5ff;
+    }
 }
 
 .editOverlay {
@@ -291,6 +297,6 @@ body {
 
 @keyframes spinner {
     100% {
-        transform: rotate(360deg)
+        transform: rotate(360deg);
     }
 }
