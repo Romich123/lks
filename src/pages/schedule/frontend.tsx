@@ -674,7 +674,7 @@ function App() {
             )}
             {editingCell && (
                 <div className={styles.editOverlay} onMouseDown={() => setEditingCell(null)}>
-                    <div className={styles.editMenu} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.editMenu} onMouseDown={(e) => e.stopPropagation()}>
                         <h3>
                             {editingCell.room}, {selectedDateLabel}, {editingCell.name}
                         </h3>
